@@ -23,7 +23,7 @@ Learn more: https://github.com/Shopify/shopify-api-js/blob/main/docs/reference/s
 
 -->
 
-- `@shopify/shopify-app-*` package and version:
+- `@anselm94/shopify-app-hono` package and version:
 - Node version:
 - Operating system:
 

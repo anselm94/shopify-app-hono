@@ -11,7 +11,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['packages/*/loom.config.ts', 'tests/setup/setup-jest.ts'],
+      files: ['tests/setup/setup-jest.ts'],
       rules: {
         'import/no-extraneous-dependencies': 0,
       },

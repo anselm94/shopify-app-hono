@@ -11,7 +11,7 @@ We welcome your contributions to the project. There are a few steps to take when
 
 ## Bug Reporting
 
-Shopify App Express package for Node uses GitHub issue tracking to manage bugs, please open an issue there.
+Shopify App Hono package for Edge applications uses GitHub issue tracking to manage bugs, please open an issue there.
 
 ## Feature Request
 
@@ -27,10 +27,10 @@ Requirements:
 You can set up your development environment by running the following:
 
 ```shell
-git clone git@github.com:Shopify/shopify-app-js.git # get the code
-cd shopify-app-js                                   # change into the source directory
-yarn install                                        # install dependencies
-yarn build                                          # build package
+git clone git@github.com:anselm94/shopify-app-hono.git # get the code
+cd shopify-app-hono                                    # change into the source directory
+yarn install                                           # install dependencies
+yarn build                                             # build package
 ```
 
 Helpful commands
