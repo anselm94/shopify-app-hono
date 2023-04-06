@@ -1,4 +1,4 @@
-import express, {Request, Response} from 'express';
+import {Request, Response, text} from 'express';
 import {AddHandlersParams, DeliveryMethod, Shopify} from '@shopify/shopify-api';
 
 import {AppConfigInterface} from '../config-types';
@@ -21,7 +21,7 @@ export function processWebhooks({
     mountWebhooks(api, config, webhookHandlers);
 
     return [
-      express.text({type: '*/*'}),
+      text({type: '*/*'}),
       async (req: Request, res: Response) => {
         await process({
           req,

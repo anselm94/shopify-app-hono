@@ -1,4 +1,4 @@
-import semver from 'semver';
+import * as semver from 'semver';
 import '@shopify/shopify-api/adapters/node';
 import {
   shopifyApi,
