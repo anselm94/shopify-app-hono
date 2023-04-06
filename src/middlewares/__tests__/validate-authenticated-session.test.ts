@@ -220,7 +220,7 @@ describe('validateAuthenticatedSession', () => {
         .expect(401);
 
       expect(response.error).not.toEqual(false);
-      if (response.error != false)
+      if (response.error !== false)
         expect(response.error.text).toMatch('Failed to parse session token');
     });
 
@@ -235,7 +235,7 @@ describe('validateAuthenticatedSession', () => {
         .expect(500);
 
       expect(response.error).not.toEqual(false);
-      if (response.error != false)
+      if (response.error !== false)
         expect(response.error.text).toBe('Storage error');
     });
   });

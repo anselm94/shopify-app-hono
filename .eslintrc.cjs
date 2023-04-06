@@ -11,13 +11,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['tests/setup/setup-jest.ts'],
-      rules: {
-        'import/no-extraneous-dependencies': 0,
-      },
-    },
-    {
-      files: ['**/.eslintrc.js'],
+      files: ['**/.eslintrc.cjs'],
       rules: {
         'no-undef': 'off',
       },

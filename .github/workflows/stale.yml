@@ -1,7 +1,7 @@
 name: Close inactive issues
 on:
   schedule:
-    - cron: "30 1 * * *"
+    - cron: '30 1 * * *'
 
 jobs:
   close-issues:
@@ -15,7 +15,7 @@ jobs:
           days-before-issue-stale: 60
           days-before-issue-close: 14
           operations-per-run: 1000
-          stale-issue-label: "Stale"
+          stale-issue-label: 'Stale'
           stale-issue-message: >
             This issue is stale because it has been open for 90 days with no activity. It will be closed if no further action occurs in 14 days.
           close-issue-message: |
@@ -29,4 +29,4 @@ jobs:
           days-before-pr-stale: -1
           days-before-pr-close: -1
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          exempt-issue-labels: "feature request"
+          exempt-issue-labels: 'feature request'
