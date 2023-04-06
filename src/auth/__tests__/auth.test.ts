@@ -257,7 +257,9 @@ describe('auth with action after callback', () => {
   it('triggers callback', async () => {
     afterAuth.mockImplementation(async (req, res) => {
       expect(res.locals.shopify.session).toEqual(session);
-      await shopify.redirectToShopifyOrAppRoot()(req, res);
+      const next = jest.fn()
+      await shopify.redirectToShopifyOrAppRoot()(req, res, next);
+      expect(next).not.toHaveBeenCalled()
     });
 
     const response = await request(app)

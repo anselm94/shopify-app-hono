@@ -219,7 +219,9 @@ describe('validateAuthenticatedSession', () => {
         .set({Authorization: `Bearer ${invalidJWT}`})
         .expect(401);
 
-      expect(response.error.text).toMatch('Failed to parse session token');
+      expect(response.error).not.toEqual(false);
+      if (response.error != false)
+        expect(response.error.text).toMatch('Failed to parse session token');
     });
 
     it('returns a 500 if the storage throws an error', async () => {
@@ -232,7 +234,9 @@ describe('validateAuthenticatedSession', () => {
         .set({Authorization: `Bearer ${validJWT}`})
         .expect(500);
 
-      expect(response.error.text).toBe('Storage error');
+      expect(response.error).not.toEqual(false);
+      if (response.error != false)
+        expect(response.error.text).toBe('Storage error');
     });
   });
 

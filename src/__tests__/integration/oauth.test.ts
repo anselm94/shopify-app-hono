@@ -7,7 +7,7 @@ import {
   LogSeverity,
 } from '@shopify/shopify-api';
 
-import {shopifyApp} from '../..';
+import {ShopifyApp, shopifyApp} from '../..';
 import {WebhookHandlersParam} from '../../webhooks/types';
 import {AppInstallations} from '../../app-installations';
 import {

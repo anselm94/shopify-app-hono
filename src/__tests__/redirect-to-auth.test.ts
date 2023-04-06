@@ -61,13 +61,13 @@ describe('redirectToAuth', () => {
   });
 
   it('triggers a client-side redirect when embedded is 1', async () => {
-    const expectedParams = new URLSearchParams({
+    const expectedSearchParams = new URLSearchParams({
       shop: TEST_SHOP,
       host: BASE64_HOST,
       embedded: '1',
     });
     const response = await request(app)
-      .get(`/redirect-to-auth?${expectedParams.toString()}`)
+      .get(`/redirect-to-auth?${expectedSearchParams.toString()}`)
       .expect(302);
 
     const url = new URL(
@@ -75,6 +75,7 @@ describe('redirectToAuth', () => {
       'http://not-a-real-host.myshopify.io',
     );
     const params = Object.fromEntries(url.searchParams.entries());
+    const expectedParams = Object.fromEntries(expectedSearchParams.entries());
 
     expect(url.host).toBe('not-a-real-host.myshopify.io');
     expect(url.pathname).toBe('/exitiframe');
