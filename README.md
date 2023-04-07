@@ -3,7 +3,7 @@
 <!-- ![Build Status]() -->
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
-[![npm version](https://badge.fury.io/js/%40shopify%2Fshopify-app-express.svg)](https://badge.fury.io/js/%40shopify%2Fshopify-app-express)
+[![npm version](https://badge.fury.io/js/%40anselm94%2Fshopify-app-hono.svg)](https://badge.fury.io/js/%40anselm94%2Fshopify-app-hono)
 
 This package makes it easy for [Hono](https://hono.dev/) edge web apps to integrate with Shopify.
 It builds on the `@shopify/shopify-api` package and creates a middleware layer that allows the app to communicate with and authenticate requests from Shopify.
