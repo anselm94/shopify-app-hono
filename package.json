@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "lint": "prettier -w . && eslint --fix .",
+    "lint": "prettier -c . && eslint .",
+    "format": "prettier -w . && eslint --fix .",
     "release": "npm run build && changeset publish",
     "clean": "rimraf ./build"
   },
