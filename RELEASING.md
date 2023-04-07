@@ -8,9 +8,9 @@ The `shopify-app-js` repo uses `changesets` to track and update the `CHANGELOG.m
 
 1. The developer creates a branch with their change using `main` as the base branch, opens a PR to obtain the necessary feedback, makes any required updates and obtains approval from the maintainers.
 
-1. The developer merges their PR, which merges their branch into `main`. This triggers the `main-release.yml` workflow.
+1. The developer merges their PR, which merges their branch into `main`. This triggers the `release-main.yml` workflow.
 
-1. The `main-release.yml` workflow will create a branch called `changeset-release/main` and a corresponding PR called `Packages for release` (or update the branch and PR if they already exist). This branch/PR contains the necessary updates to the `CHANGELOG.md` file that will be included in the release, as well as any updates (e.g., version) to the `package.json` file.
+1. The `release-main.yml` workflow will create a branch called `changeset-release/main` and a corresponding PR called `Packages for release` (or update the branch and PR if they already exist). This branch/PR contains the necessary updates to the `CHANGELOG.md` file that will be included in the release, as well as any updates (e.g., version) to the `package.json` file.
 
 1. When ready to release, merging the `Packages for release` PR will update `main` with the contents of the `changeset-release/main` branch, and will automatically publish the package(s) to NPM.
 
@@ -59,7 +59,7 @@ See the sections below for specific details related to the steps outlined above.
 
 1. Once the files in the PR reflect the desired release changes, merge the `Packages for release` PR into `main` - this triggers the release.
 
-1. The same `changesets/action` in the `main-release.yml` workflow will call `yarn release`, which builds the packages and pushes the changed packages to `npmjs.org`.
+1. The same `changesets/action` in the `release-main.yml` workflow will call `yarn release`, which builds the packages and pushes the changed packages to `npmjs.org`.
 
 1. After the release, there will no longer be a `Packages for release` PR. `changesets` will re-create it when a branch that contains `changesets`-created changelog files is merged into `main`.
 

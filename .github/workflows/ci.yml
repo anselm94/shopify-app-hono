@@ -1,23 +1,25 @@
-on: [push, pull_request]
 name: CI
+on: [push, pull_request]
 jobs:
   CI:
     name: CI (${{ matrix.version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [14, 16, 18]
+        version: [18]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.version }}
       - name: Install
-        # TODO remove the --ignore-engines flag when node 14 support is dropped
-        run: yarn install --ignore-engines
+        run: yarn install
       - name: Run tests
         run: yarn test
       - name: Run linting
         run: yarn lint
       - name: Build packages
         run: yarn build
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+      - name: Ensure markdown links are only to main GitHub branches
+        run: 'grep --include="*.md" --exclude-dir=node_modules -Er "\/(tree|blob)" | (! grep -vE "\/(tree|blob)\/(main|master)")'
