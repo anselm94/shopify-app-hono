@@ -8,12 +8,12 @@ export class AppInstallations {
   constructor(config: AppConfigInterface) {
     if (!config.sessionStorage.findSessionsByShop) {
       throw new Error(
-        'To use this Express package, you must provide a session storage manager that implements findSessionsByShop',
+        'To use this package, you must provide a session storage manager that implements findSessionsByShop',
       );
     }
     if (!config.sessionStorage.deleteSessions) {
       throw new Error(
-        'To use this Express package, you must provide a session storage manager that implements deleteSessions',
+        'To use this package, you must provide a session storage manager that implements deleteSessions',
       );
     }
     this.sessionStorage = config.sessionStorage;
