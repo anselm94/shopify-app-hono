@@ -1,54 +1,56 @@
-import {Request, Response, text} from 'express';
-import {AddHandlersParams, DeliveryMethod, Shopify} from '@shopify/shopify-api';
-
-import {AppConfigInterface} from '../config-types';
-import {ApiAndConfigParams} from '../types';
-import {AppInstallations} from '../app-installations';
-import {deleteAppInstallationHandler} from '../middlewares';
-
 import {
-  ProcessWebhooksMiddleware,
-  ProcessWebhooksMiddlewareParams,
-  WebhookHandlersParam,
-} from './types';
-import {process} from './process';
+  AddHandlersParams,
+  DeliveryMethod,
+  WebhookHandler,
+} from '@shopify/shopify-api';
+import {AppInstallations} from 'app-installations';
+import {Context, Handler} from 'hono';
 
-export function processWebhooks({
-  api,
-  config,
-}: ApiAndConfigParams): ProcessWebhooksMiddleware {
-  return function ({webhookHandlers}: ProcessWebhooksMiddlewareParams) {
-    mountWebhooks(api, config, webhookHandlers);
+import {AppEnv} from '~types/app';
 
-    return [
-      text({type: '*/*'}),
-      async (req: Request, res: Response) => {
-        await process({
-          req,
-          res,
-          api,
-          config,
-        });
-      },
-    ];
+export interface WebhookHandlersParam {
+  [topic: string]: WebhookHandler | WebhookHandler[];
+}
+
+export function processWebhooks(
+  webhookHandlers: WebhookHandlersParam,
+): Handler<AppEnv> {
+  return async (ctx) => {
+    mountWebhooks(ctx, webhookHandlers);
+
+    const ctxAppConfig = ctx.get('AppConfig');
+    try {
+      await ctxAppConfig.api.webhooks.process({
+        rawBody: await ctx.req.text(),
+        rawRequest: ctx.req,
+        rawResponse: ctx.res,
+      });
+
+      await ctxAppConfig.logger.info(
+        'Webhook processed, returned status code 200',
+      );
+    } catch (error) {
+      await ctxAppConfig.logger.error(`Failed to process webhook: ${error}`);
+
+      // The library will respond even if the handler throws an error
+    }
+    return ctx.res;
   };
 }
 
-function mountWebhooks(
-  api: Shopify,
-  config: AppConfigInterface,
-  handlers: WebhookHandlersParam,
-) {
-  api.webhooks.addHandlers(handlers as AddHandlersParams);
+function mountWebhooks(ctx: Context<AppEnv>, handlers: WebhookHandlersParam) {
+  const ctxAppConfig = ctx.get('AppConfig');
+
+  ctxAppConfig.api.webhooks.addHandlers(handlers as AddHandlersParams);
 
   // Add our custom app uninstalled webhook
-  const appInstallations = new AppInstallations(config);
+  const appInstallations = new AppInstallations(ctxAppConfig);
 
-  api.webhooks.addHandlers({
+  ctxAppConfig.api.webhooks.addHandlers({
     APP_UNINSTALLED: {
       deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: config.webhooks.path,
-      callback: deleteAppInstallationHandler(appInstallations, config),
+      callbackUrl: ctxAppConfig.webhooks.path,
+      callback: deleteAppInstallationHandler(appInstallations, ctxAppConfig),
     },
   });
 }

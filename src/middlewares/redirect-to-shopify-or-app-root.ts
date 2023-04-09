@@ -1,39 +1,26 @@
-import {Request, Response} from 'express';
+import {Handler} from 'hono';
 
-import {ApiAndConfigParams} from '../types';
+import {AppEnv} from '~types/app';
 
-import {RedirectToShopifyOrAppRootMiddleware} from './types';
+export function redirectToShopifyOrAppRoot(): Handler<AppEnv> {
+  return async (ctx) => {
+    const ctxAppConfig = ctx.get('AppConfig');
+    const session = ctx.get('Session');
 
-export function redirectToShopifyOrAppRoot({
-  api,
-  config,
-}: ApiAndConfigParams): RedirectToShopifyOrAppRootMiddleware {
-  return function () {
-    return async function (req: Request, res: Response) {
-      if (res.headersSent) {
-        await config.logger.info(
-          'Response headers have already been sent, skipping redirection to host',
-          {shop: res.locals.shopify?.session?.shop},
-        );
+    const host = ctxAppConfig.api.utils.sanitizeHost(
+      ctx.req.query('host') || '',
+    );
+    const redirectUrl = ctxAppConfig.api.config.isEmbeddedApp
+      ? await ctxAppConfig.api.auth.getEmbeddedAppUrl({
+          rawRequest: ctx.req,
+          rawResponse: ctx.res,
+        })
+      : `/?shop=${session.shop}&host=${encodeURIComponent(host || '')}`;
 
-        return;
-      }
+    await ctxAppConfig.logger.debug(`Redirecting to host at ${redirectUrl}`, {
+      shop: session.shop,
+    });
 
-      const host = api.utils.sanitizeHost(req.query.host as string)!;
-      const redirectUrl = api.config.isEmbeddedApp
-        ? await api.auth.getEmbeddedAppUrl({
-            rawRequest: req,
-            rawResponse: res,
-          })
-        : `/?shop=${res.locals.shopify.session.shop}&host=${encodeURIComponent(
-            host,
-          )}`;
-
-      await config.logger.debug(`Redirecting to host at ${redirectUrl}`, {
-        shop: res.locals.shopify.session.shop,
-      });
-
-      res.redirect(redirectUrl);
-    };
+    return ctx.redirect(redirectUrl);
   };
 }

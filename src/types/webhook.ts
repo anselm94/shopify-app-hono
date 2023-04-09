@@ -1,15 +1,12 @@
-import {Request, RequestHandler, Response} from 'express';
-import {Shopify, WebhookHandler} from '@shopify/shopify-api';
-
-import {AppConfigInterface} from '../config-types';
+import {Shopify} from '@shopify/shopify-api';
+import {Context} from 'hono';
 
 export interface WebhookHandlersParam {
   [topic: string]: WebhookHandler | WebhookHandler[];
 }
 
 export interface WebhookProcessParams {
-  req: Request;
-  res: Response;
+  ctx: Context;
   api: Shopify;
   config: AppConfigInterface;
 }

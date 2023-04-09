@@ -1,120 +1,112 @@
-import {Request, Response, NextFunction} from 'express';
 import {Session, Shopify} from '@shopify/shopify-api';
+import {Context, MiddlewareHandler} from 'hono';
+import {AppInstallations} from 'app-installations';
 
-import {redirectToAuth} from '../redirect-to-auth';
-import {AppConfigInterface} from '../config-types';
-import {ApiAndConfigParams} from '../types';
-import {AppInstallations} from '../app-installations';
-
-import {EnsureInstalledMiddleware} from './types';
-import {addCSPHeader} from './csp-headers';
 import {validateAuthenticatedSession} from './validate-authenticated-session';
-import {hasValidAccessToken} from './has-valid-access-token';
+import {addCSPHeader} from './csp-headers';
 
-interface EnsureInstalledParams extends ApiAndConfigParams {}
+import {hasValidAccessToken} from '~utils/has-valid-access-token';
+import {AppConfigContext, AppEnv} from '~types/app';
+import {redirectToAuth} from '~utils/redirect-to-auth';
 
-export function ensureInstalled({
-  api,
-  config,
-}: EnsureInstalledParams): EnsureInstalledMiddleware {
-  return function ensureInstalledOnShop() {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      config.logger.info('Running ensureInstalledOnShop');
+export function ensureInstalled(): MiddlewareHandler<AppEnv> {
+  return async (ctx, next) => {
+    const ctxAppConfig = ctx.get('AppConfig');
+    ctxAppConfig.logger.info('Running ensureInstalledOnShop');
 
-      if (!api.config.isEmbeddedApp) {
-        config.logger.warning(
-          'ensureInstalledOnShop() should only be used in embedded apps; calling validateAuthenticatedSession() instead',
-        );
+    if (!ctxAppConfig.api.config.isEmbeddedApp) {
+      ctxAppConfig.logger.warning(
+        'ensureInstalledOnShop() should only be used in embedded apps; calling validateAuthenticatedSession() instead',
+      );
 
-        return validateAuthenticatedSession({api, config})()(req, res, next);
-      }
+      return validateAuthenticatedSession()(ctx, next);
+    }
 
-      const shop = getRequestShop(api, config, req, res);
-      if (!shop) {
-        return undefined;
-      }
+    const shop = getRequestShop(ctx);
+    if (!shop) {
+      return ctx.res;
+    }
 
-      config.logger.debug('Checking if shop has installed the app', {shop});
+    ctxAppConfig.logger.debug('Checking if shop has installed the app', {shop});
 
-      const sessionId = api.session.getOfflineId(shop);
-      const session = await config.sessionStorage.loadSession(sessionId);
+    const sessionId = ctxAppConfig.api.session.getOfflineId(shop);
+    const session = await ctxAppConfig.sessionStorage.loadSession(sessionId);
 
-      const exitIframeRE = new RegExp(`^${config.exitIframePath}`, 'i');
-      if (!session && !req.originalUrl.match(exitIframeRE)) {
-        config.logger.debug(
-          'App installation was not found for shop, redirecting to auth',
+    const exitIframeRE = new RegExp(`^${ctxAppConfig.exitIframePath}`, 'i');
+    if (!session && !ctx.req.url.match(exitIframeRE)) {
+      ctxAppConfig.logger.debug(
+        'App installation was not found for shop, redirecting to auth',
+        {shop},
+      );
+
+      return redirectToAuth(ctx);
+    }
+
+    if (
+      ctxAppConfig.api.config.isEmbeddedApp &&
+      ctx.req.query('embedded') !== '1'
+    ) {
+      if (await sessionHasValidAccessToken(ctxAppConfig, session)) {
+        await embedAppIntoShopify(ctx, shop);
+        return ctx.res;
+      } else {
+        ctxAppConfig.logger.info(
+          'Found a session, but it is not valid. Redirecting to auth',
           {shop},
         );
 
-        return redirectToAuth({req, res, api, config});
+        return redirectToAuth(ctx);
       }
+    }
 
-      if (api.config.isEmbeddedApp && req.query.embedded !== '1') {
-        if (await sessionHasValidAccessToken(api, config, session)) {
-          await embedAppIntoShopify(api, config, req, res, shop);
-          return undefined;
-        } else {
-          config.logger.info(
-            'Found a session, but it is not valid. Redirecting to auth',
-            {shop},
-          );
+    addCSPHeader(ctx);
 
-          return redirectToAuth({req, res, api, config});
-        }
-      }
+    ctxAppConfig.logger.info('App is installed and ready to load', {shop});
 
-      addCSPHeader(api, req, res);
-
-      config.logger.info('App is installed and ready to load', {shop});
-
-      return next();
-    };
+    return next();
   };
 }
 
 export function deleteAppInstallationHandler(
+  ctx: Context<AppEnv>,
   appInstallations: AppInstallations,
-  config: AppConfigInterface,
 ) {
+  const ctxAppConfig = ctx.get('AppConfig');
   return async function (
     _topic: string,
     shop: string,
     _body: any,
     _webhookId: string,
   ) {
-    await config.logger.debug('Deleting shop sessions', {shop});
+    await ctxAppConfig.logger.debug('Deleting shop sessions', {shop});
 
     await appInstallations.delete(shop);
   };
 }
 
-function getRequestShop(
-  api: Shopify,
-  config: AppConfigInterface,
-  req: Request,
-  res: Response,
-): string | undefined {
-  if (typeof req.query.shop !== 'string') {
-    config.logger.error(
+function getRequestShop(ctx: Context<AppEnv>): string | undefined {
+  const ctxAppConfig = ctx.get('AppConfig');
+  if (typeof ctx.req.query('shop') !== 'string') {
+    ctxAppConfig.logger.error(
       'ensureInstalledOnShop did not receive a shop query argument',
-      {shop: req.query.shop},
+      {shop: ctx.req.query('shop')},
     );
 
-    res.status(400);
-    res.send('No shop provided');
+    ctx.status(400);
+    ctx.text('No shop provided');
     return undefined;
   }
 
-  const shop = api.utils.sanitizeShop(req.query.shop);
+  const shop = ctxAppConfig.api.utils.sanitizeShop(ctx.req.query('shop') || '');
 
   if (!shop) {
-    config.logger.error(
+    ctxAppConfig.logger.error(
       'ensureInstalledOnShop did not receive a valid shop query argument',
-      {shop: req.query.shop},
+      {shop: ctx.req.query('shop')},
     );
 
-    res.status(422);
-    res.send('Invalid shop provided');
+    ctx.status(422);
+    ctx.text('Invalid shop provided');
     return undefined;
   }
 
@@ -122,8 +114,7 @@ function getRequestShop(
 }
 
 async function sessionHasValidAccessToken(
-  api: Shopify,
-  config: AppConfigInterface,
+  config: AppConfigContext,
   session: Session | undefined,
 ): Promise<boolean> {
   if (!session) {
@@ -132,8 +123,8 @@ async function sessionHasValidAccessToken(
 
   try {
     return (
-      session.isActive(api.config.scopes) &&
-      (await hasValidAccessToken(api, session))
+      session.isActive(config.api.config.scopes) &&
+      (await hasValidAccessToken(config.api, session))
     );
   } catch (error) {
     config.logger.error(`Could not check if session was valid: ${error}`, {
@@ -144,33 +135,30 @@ async function sessionHasValidAccessToken(
 }
 
 async function embedAppIntoShopify(
-  api: Shopify,
-  config: AppConfigInterface,
-  req: Request,
-  res: Response,
+  ctx: Context<AppEnv>,
   shop: string,
-): Promise<void> {
+): Promise<Response> {
+  const ctxAppConfig = ctx.get('AppConfig');
   let embeddedUrl: string;
   try {
-    embeddedUrl = await api.auth.getEmbeddedAppUrl({
-      rawRequest: req,
-      rawResponse: res,
+    embeddedUrl = await ctxAppConfig.api.auth.getEmbeddedAppUrl({
+      rawRequest: ctx.req,
+      rawResponse: ctx.res,
     });
   } catch (error) {
-    config.logger.error(
+    ctxAppConfig.logger.error(
       `ensureInstalledOnShop did not receive a host query argument`,
       {shop},
     );
 
-    res.status(400);
-    res.send('No host provided');
-    return;
+    ctx.status(400);
+    return ctx.text('No host provided');
   }
 
-  config.logger.debug(
+  ctxAppConfig.logger.debug(
     `Request is not embedded but app is. Redirecting to ${embeddedUrl} to embed the app`,
     {shop},
   );
 
-  res.redirect(embeddedUrl + req.path);
+  return ctx.redirect(embeddedUrl + ctx.req.path);
 }

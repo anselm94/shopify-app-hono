@@ -1,11 +1,11 @@
 import {Session} from '@shopify/shopify-api';
 
-import {AppConfigInterface} from './config-types';
+import {AppConfigContext} from '~types/app';
 
 export class AppInstallations {
   private sessionStorage;
 
-  constructor(config: AppConfigInterface) {
+  constructor(config: AppConfigContext) {
     if (!config.sessionStorage.findSessionsByShop) {
       throw new Error(
         'To use this package, you must provide a session storage manager that implements findSessionsByShop',

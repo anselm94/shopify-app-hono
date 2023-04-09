@@ -1,1 +1,1 @@
-export const SHOPIFY_HONO_LIBRARY_VERSION = '0.1.1';
+export const LIB_VERSION = '0.1.1';

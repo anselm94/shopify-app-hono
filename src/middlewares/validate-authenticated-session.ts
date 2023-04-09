@@ -1,127 +1,119 @@
 import {Session, Shopify, InvalidJwtError} from '@shopify/shopify-api';
-import {Request, Response, NextFunction} from 'express';
+import {Context, MiddlewareHandler} from 'hono';
 
-import {redirectToAuth} from '../redirect-to-auth';
-import {returnTopLevelRedirection} from '../return-top-level-redirection';
-import {ApiAndConfigParams} from '../types';
+import {AppEnv} from '~types/app';
+import {hasValidAccessToken} from '~utils/has-valid-access-token';
+import {redirectToAuth} from '~utils/redirect-to-auth';
+import {returnTopLevelRedirection} from '~utils/return-top-level-redirection';
 
-import {ValidateAuthenticatedSessionMiddleware} from './types';
-import {hasValidAccessToken} from './has-valid-access-token';
+export function validateAuthenticatedSession(): MiddlewareHandler<AppEnv> {
+  return async (ctx, next) => {
+    const ctxAppConfig = ctx.get('AppConfig');
 
-interface validateAuthenticatedSessionParams extends ApiAndConfigParams {}
+    ctxAppConfig.logger.info('Running validateAuthenticatedSession');
 
-export function validateAuthenticatedSession({
-  api,
-  config,
-}: validateAuthenticatedSessionParams): ValidateAuthenticatedSessionMiddleware {
-  return function validateAuthenticatedSession() {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      config.logger.info('Running validateAuthenticatedSession');
+    let sessionId: string | undefined;
+    try {
+      sessionId = await ctxAppConfig.api.session.getCurrentId({
+        isOnline: ctxAppConfig.useOnlineTokens,
+        rawRequest: ctx.req,
+        rawResponse: ctx.res,
+      });
+    } catch (_err) {
+      const error = _err as Error;
+      await ctxAppConfig.logger.error(
+        `Error when loading session from storage: ${error}`,
+      );
 
-      let sessionId: string | undefined;
+      return handleSessionError(ctx, error);
+    }
+
+    let session: Session | undefined;
+    if (sessionId) {
       try {
-        sessionId = await api.session.getCurrentId({
-          isOnline: config.useOnlineTokens,
-          rawRequest: req,
-          rawResponse: res,
-        });
-      } catch (error) {
-        await config.logger.error(
+        session = await ctxAppConfig.sessionStorage.loadSession(sessionId);
+      } catch (_err) {
+        const error = _err as Error;
+        await ctxAppConfig.logger.error(
           `Error when loading session from storage: ${error}`,
         );
 
-        await handleSessionError(req, res, error);
-        return undefined;
+        ctx.status(500);
+        return ctx.text(error.message);
       }
+    }
 
-      let session: Session | undefined;
-      if (sessionId) {
-        try {
-          session = await config.sessionStorage.loadSession(sessionId);
-        } catch (error) {
-          await config.logger.error(
-            `Error when loading session from storage: ${error}`,
-          );
+    let shop =
+      ctxAppConfig.api.utils.sanitizeShop(ctx.req.query('shop') || '') ||
+      session?.shop;
 
-          res.status(500);
-          res.send(error.message);
-          return undefined;
-        }
-      }
+    if (session && shop && session.shop !== shop) {
+      ctxAppConfig.logger.debug(
+        'Found a session for a different shop in the request',
+        {currentShop: session.shop, requestShop: shop},
+      );
 
-      let shop =
-        api.utils.sanitizeShop(req.query.shop as string) || session?.shop;
+      return redirectToAuth(ctx);
+    }
 
-      if (session && shop && session.shop !== shop) {
-        config.logger.debug(
-          'Found a session for a different shop in the request',
-          {currentShop: session.shop, requestShop: shop},
-        );
+    if (session) {
+      ctxAppConfig.logger.debug('Request session found and loaded', {
+        shop: session.shop,
+      });
 
-        return redirectToAuth({req, res, api, config});
-      }
-
-      if (session) {
-        config.logger.debug('Request session found and loaded', {
+      if (session.isActive(ctxAppConfig.api.config.scopes)) {
+        ctxAppConfig.logger.debug('Request session exists and is active', {
           shop: session.shop,
         });
 
-        if (session.isActive(api.config.scopes)) {
-          config.logger.debug('Request session exists and is active', {
+        if (await hasValidAccessToken(ctxAppConfig.api, session)) {
+          ctxAppConfig.logger.info('Request session has a valid access token', {
             shop: session.shop,
           });
 
-          if (await hasValidAccessToken(api, session)) {
-            config.logger.info('Request session has a valid access token', {
-              shop: session.shop,
-            });
-
-            res.locals.shopify = {
-              ...res.locals.shopify,
-              session,
-            };
-            return next();
-          }
+          ctx.set('Session', session);
+          await next();
+          return ctx.res;
         }
       }
+    }
 
-      const bearerPresent = req.headers.authorization?.match(/Bearer (.*)/);
-      if (bearerPresent) {
-        if (!shop) {
-          shop = await setShopFromSessionOrToken(
-            api,
-            session,
-            bearerPresent[1],
-          );
-        }
+    const bearerPresent = ctx.req.headers
+      .get('Authorization')
+      ?.match(/Bearer (.*)/);
+    if (bearerPresent) {
+      if (!shop) {
+        shop = await setShopFromSessionOrToken(
+          ctxAppConfig.api,
+          session,
+          bearerPresent[1],
+        );
       }
+    }
 
-      const redirectUrl = `${config.auth.path}?shop=${shop}`;
-      config.logger.info(
-        `Session was not valid. Redirecting to ${redirectUrl}`,
-        {shop},
-      );
+    const redirectUrl = `${ctxAppConfig.auth.path}?shop=${shop}`;
+    ctxAppConfig.logger.info(
+      `Session was not valid. Redirecting to ${redirectUrl}`,
+      {
+        shop,
+      },
+    );
 
-      return returnTopLevelRedirection({
-        res,
-        config,
-        bearerPresent: Boolean(bearerPresent),
-        redirectUrl,
-      });
-    };
+    return returnTopLevelRedirection(ctx, redirectUrl, Boolean(bearerPresent));
   };
 }
 
-async function handleSessionError(_req: Request, res: Response, error: Error) {
+async function handleSessionError(
+  ctx: Context<AppEnv>,
+  error: Error,
+): Promise<Response> {
   switch (true) {
     case error instanceof InvalidJwtError:
-      res.status(401);
-      res.send(error.message);
-      break;
+      ctx.status(401);
+      return ctx.text(error.message);
     default:
-      res.status(500);
-      res.send(error.message);
-      break;
+      ctx.status(500);
+      return ctx.text(error.message);
   }
 }
 

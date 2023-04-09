@@ -1,31 +1,31 @@
-import {NextFunction, Request, RequestHandler, Response} from 'express';
-
-import {ApiAndConfigParams} from '../types';
-import {redirectToAuth} from '../redirect-to-auth';
+import {Handler} from 'hono';
 
 import {authCallback} from './auth-callback';
-import {AuthMiddleware} from './types';
 
-export function auth({api, config}: ApiAndConfigParams): AuthMiddleware {
+import {AppEnv} from '~types/app';
+import {redirectToAuth} from '~utils/redirect-to-auth';
+
+export function auth() {
   return {
-    begin(): RequestHandler {
-      return async (req: Request, res: Response) =>
-        redirectToAuth({req, res, api, config});
+    begin(): Handler<AppEnv> {
+      return (ctx) => {
+        return redirectToAuth(ctx);
+      };
     },
-    callback(): RequestHandler {
-      return async (req: Request, res: Response, next: NextFunction) => {
-        await config.logger.info('Handling request to complete OAuth process');
+    callback(): Handler {
+      return async (ctx, next) => {
+        const ctxAppConfig = ctx.get('AppConfig');
+        await ctxAppConfig.logger.info(
+          'Handling request to complete OAuth process',
+        );
 
-        const oauthCompleted = await authCallback({
-          req,
-          res,
-          api,
-          config,
-        });
+        const oauthCompleted = await authCallback(ctx);
 
         if (oauthCompleted) {
-          next();
+          await next();
         }
+
+        return ctx.res;
       };
     },
   };

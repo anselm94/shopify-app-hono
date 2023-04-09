@@ -1,31 +1,24 @@
-import {Request, Response, NextFunction} from 'express';
-import {Shopify} from '@shopify/shopify-api';
+import {Context, MiddlewareHandler} from 'hono';
 
-import {CspHeadersMiddleware} from './types';
+import {AppEnv} from '~types/app';
 
-interface CspHeadersParams {
-  api: Shopify;
-}
-
-export function cspHeaders({api}: CspHeadersParams): CspHeadersMiddleware {
-  return function cspHeaders() {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      addCSPHeader(api, req, res);
-      next();
-    };
+export function cspHeaders(): MiddlewareHandler<AppEnv> {
+  return async (ctx) => {
+    addCSPHeader(ctx);
   };
 }
 
-export function addCSPHeader(api: Shopify, req: Request, res: Response) {
-  const shop = api.utils.sanitizeShop(req.query.shop as string);
-  if (api.config.isEmbeddedApp && shop) {
-    res.setHeader(
+export function addCSPHeader(ctx: Context<AppEnv>) {
+  const ctxAppConfig = ctx.get('AppConfig');
+  const shop = ctxAppConfig.api.utils.sanitizeShop(ctx.req.query('shop') || '');
+  if (ctxAppConfig.api.config.isEmbeddedApp && shop) {
+    ctx.header(
       'Content-Security-Policy',
       `frame-ancestors https://${encodeURIComponent(
         shop,
       )} https://admin.shopify.com;`,
     );
   } else {
-    res.setHeader('Content-Security-Policy', `frame-ancestors 'none';`);
+    ctx.header('Content-Security-Policy', `frame-ancestors 'none';`);
   }
 }

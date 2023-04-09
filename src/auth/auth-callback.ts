@@ -1,4 +1,3 @@
-import {Request, Response} from 'express';
 import {
   CookieNotFound,
   gdprTopics,
@@ -6,75 +5,67 @@ import {
   Session,
   Shopify,
 } from '@shopify/shopify-api';
+import {Context} from 'hono';
 
-import {AppConfigInterface} from '../config-types';
-import {redirectToAuth} from '../redirect-to-auth';
+import {AppEnv} from '~types/app';
+import {redirectToAuth} from '~utils/redirect-to-auth';
 
-import {AuthCallbackParams} from './types';
-
-export async function authCallback({
-  req,
-  res,
-  api,
-  config,
-}: AuthCallbackParams): Promise<boolean> {
+export async function authCallback(ctx: Context<AppEnv>): Promise<boolean> {
+  const ctxAppConfig = ctx.get('AppConfig');
   try {
-    const callbackResponse = await api.auth.callback({
-      rawRequest: req,
-      rawResponse: res,
+    const callbackResponse = await ctxAppConfig.api.auth.callback({
+      rawRequest: ctx.req,
+      rawResponse: ctx.res,
     });
 
-    await config.logger.debug('Callback is valid, storing session', {
+    await ctxAppConfig.logger.debug('Callback is valid, storing session', {
       shop: callbackResponse.session.shop,
       isOnline: callbackResponse.session.isOnline,
     });
 
-    await config.sessionStorage.storeSession(callbackResponse.session);
+    await ctxAppConfig.sessionStorage.storeSession(callbackResponse.session);
 
     // If this is an offline OAuth process, register webhooks
     if (!callbackResponse.session.isOnline) {
-      await registerWebhooks(config, api, callbackResponse.session);
+      await registerWebhooks(ctx, callbackResponse.session);
     }
 
     // If we're completing an offline OAuth process, immediately kick off the online one
-    if (config.useOnlineTokens && !callbackResponse.session.isOnline) {
-      await config.logger.debug(
+    if (ctxAppConfig.useOnlineTokens && !callbackResponse.session.isOnline) {
+      await ctxAppConfig.logger.debug(
         'Completing offline token OAuth, redirecting to online token OAuth',
         {shop: callbackResponse.session.shop},
       );
 
-      await redirectToAuth({req, res, api, config, isOnline: true});
+      await redirectToAuth(ctx, true);
       return false;
     }
 
-    res.locals.shopify = {
-      ...res.locals.shopify,
-      session: callbackResponse.session,
-    };
+    ctx.set('Session', callbackResponse.session);
 
-    await config.logger.debug('Completed OAuth callback', {
+    await ctxAppConfig.logger.debug('Completed OAuth callback', {
       shop: callbackResponse.session.shop,
       isOnline: callbackResponse.session.isOnline,
     });
 
     return true;
-  } catch (error) {
-    await config.logger.error(`Failed to complete OAuth with error: ${error}`);
+  } catch (_err) {
+    const error = _err as Error;
+    await ctxAppConfig.logger.error(
+      `Failed to complete OAuth with error: ${error}`,
+    );
 
-    await handleCallbackError(req, res, api, config, error);
+    await handleCallbackError(ctx, error);
   }
 
   return false;
 }
 
-async function registerWebhooks(
-  config: AppConfigInterface,
-  api: Shopify,
-  session: Session,
-) {
-  await config.logger.debug('Registering webhooks', {shop: session.shop});
+async function registerWebhooks(ctx: Context<AppEnv>, session: Session) {
+  const ctxAppConfig = ctx.get('AppConfig');
+  await ctxAppConfig.logger.debug('Registering webhooks', {shop: session.shop});
 
-  const responsesByTopic = await api.webhooks.register({session});
+  const responsesByTopic = await ctxAppConfig.api.webhooks.register({session});
 
   for (const topic in responsesByTopic) {
     if (!Object.prototype.hasOwnProperty.call(responsesByTopic, topic)) {
@@ -86,12 +77,12 @@ async function registerWebhooks(
         const result: any = response.result;
 
         if (result.errors) {
-          await config.logger.error(
+          await ctxAppConfig.logger.error(
             `Failed to register ${topic} webhook: ${result.errors[0].message}`,
             {shop: session.shop},
           );
         } else {
-          await config.logger.error(
+          await ctxAppConfig.logger.error(
             `Failed to register ${topic} webhook: ${JSON.stringify(
               result.data,
             )}`,
@@ -104,23 +95,17 @@ async function registerWebhooks(
 }
 
 async function handleCallbackError(
-  req: Request,
-  res: Response,
-  api: Shopify,
-  config: AppConfigInterface,
+  ctx: Context<AppEnv>,
   error: Error,
-) {
+): Promise<Response> {
   switch (true) {
     case error instanceof InvalidOAuthError:
-      res.status(400);
-      res.send(error.message);
-      break;
+      ctx.status(400);
+      return ctx.text(error.message);
     case error instanceof CookieNotFound:
-      await redirectToAuth({req, res, api, config});
-      break;
+      return redirectToAuth(ctx);
     default:
-      res.status(500);
-      res.send(error.message);
-      break;
+      ctx.status(500);
+      return ctx.text(error.message);
   }
 }
