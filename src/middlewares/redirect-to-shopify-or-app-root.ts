@@ -1,6 +1,5 @@
 import {Handler} from 'hono';
-
-import {AppEnv} from '~types/app';
+import {AppEnv} from 'types';
 
 export function redirectToShopifyOrAppRoot(): Handler<AppEnv> {
   return async (ctx) => {

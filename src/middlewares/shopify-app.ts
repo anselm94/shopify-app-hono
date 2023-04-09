@@ -1,10 +1,8 @@
 import {ShopifyRestResources, shopifyApi} from '@shopify/shopify-api';
 import {SessionStorage} from '@shopify/shopify-app-session-storage';
 import {Context, MiddlewareHandler} from 'hono';
+import {AppConfigContext, AppConfigParams, AppEnv} from 'types';
 import {overrideLogger, validateApiConfig} from 'utils/config';
-
-import {AppConfigParams} from '~types/config';
-import {AppConfigContext, AppEnv} from '~types/app';
 
 function createAppConfigContext<
   R extends ShopifyRestResources = any,

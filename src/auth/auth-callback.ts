@@ -3,11 +3,10 @@ import {
   gdprTopics,
   InvalidOAuthError,
   Session,
-  Shopify,
 } from '@shopify/shopify-api';
 import {Context} from 'hono';
+import {AppEnv} from 'types';
 
-import {AppEnv} from '~types/app';
 import {redirectToAuth} from '~utils/redirect-to-auth';
 
 export async function authCallback(ctx: Context<AppEnv>): Promise<boolean> {

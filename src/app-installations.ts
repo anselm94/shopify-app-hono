@@ -1,6 +1,5 @@
 import {Session} from '@shopify/shopify-api';
-
-import {AppConfigContext} from '~types/app';
+import {AppConfigContext} from 'types';
 
 export class AppInstallations {
   private sessionStorage;
@@ -20,7 +19,7 @@ export class AppInstallations {
   }
 
   async includes(shopDomain: string): Promise<boolean> {
-    const shopSessions = await this.sessionStorage.findSessionsByShop!(
+    const shopSessions = await this.sessionStorage.findSessionsByShop(
       shopDomain,
     );
     if (shopSessions.length > 0) {
@@ -32,11 +31,11 @@ export class AppInstallations {
   }
 
   async delete(shopDomain: string): Promise<void> {
-    const shopSessions = await this.sessionStorage.findSessionsByShop!(
+    const shopSessions = await this.sessionStorage.findSessionsByShop(
       shopDomain,
     );
     if (shopSessions.length > 0) {
-      await this.sessionStorage.deleteSessions!(
+      await this.sessionStorage.deleteSessions(
         shopSessions.map((session: Session) => session.id),
       );
     }

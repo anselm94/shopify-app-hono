@@ -5,8 +5,9 @@ import {
 } from '@shopify/shopify-api';
 import {AppInstallations} from 'app-installations';
 import {Context, Handler} from 'hono';
+import {AppEnv} from 'types';
 
-import {AppEnv} from '~types/app';
+import {deleteAppInstallationHandler} from '~middlewares/ensure-installed-on-shop';
 
 export interface WebhookHandlersParam {
   [topic: string]: WebhookHandler | WebhookHandler[];
@@ -50,7 +51,7 @@ function mountWebhooks(ctx: Context<AppEnv>, handlers: WebhookHandlersParam) {
     APP_UNINSTALLED: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: ctxAppConfig.webhooks.path,
-      callback: deleteAppInstallationHandler(appInstallations, ctxAppConfig),
+      callback: deleteAppInstallationHandler(ctx, appInstallations),
     },
   });
 }

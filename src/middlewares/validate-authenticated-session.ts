@@ -1,7 +1,7 @@
 import {Session, Shopify, InvalidJwtError} from '@shopify/shopify-api';
 import {Context, MiddlewareHandler} from 'hono';
+import {AppEnv} from 'types';
 
-import {AppEnv} from '~types/app';
 import {hasValidAccessToken} from '~utils/has-valid-access-token';
 import {redirectToAuth} from '~utils/redirect-to-auth';
 import {returnTopLevelRedirection} from '~utils/return-top-level-redirection';

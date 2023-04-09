@@ -1,6 +1,5 @@
 import {Context, MiddlewareHandler} from 'hono';
-
-import {AppEnv} from '~types/app';
+import {AppEnv} from 'types';
 
 export function cspHeaders(): MiddlewareHandler<AppEnv> {
   return async (ctx) => {

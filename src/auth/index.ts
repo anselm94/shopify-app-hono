@@ -1,8 +1,8 @@
 import {Handler} from 'hono';
+import {AppEnv} from 'types';
 
 import {authCallback} from './auth-callback';
 
-import {AppEnv} from '~types/app';
 import {redirectToAuth} from '~utils/redirect-to-auth';
 
 export function auth() {

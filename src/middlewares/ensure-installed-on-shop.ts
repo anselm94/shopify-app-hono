@@ -1,12 +1,12 @@
-import {Session, Shopify} from '@shopify/shopify-api';
+import {Session} from '@shopify/shopify-api';
 import {Context, MiddlewareHandler} from 'hono';
 import {AppInstallations} from 'app-installations';
+import {AppConfigContext, AppEnv} from 'types';
 
 import {validateAuthenticatedSession} from './validate-authenticated-session';
 import {addCSPHeader} from './csp-headers';
 
 import {hasValidAccessToken} from '~utils/has-valid-access-token';
-import {AppConfigContext, AppEnv} from '~types/app';
 import {redirectToAuth} from '~utils/redirect-to-auth';
 
 export function ensureInstalled(): MiddlewareHandler<AppEnv> {

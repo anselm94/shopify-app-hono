@@ -1,12 +1,11 @@
-import {Session, Shopify, ShopifyRestResources} from '@shopify/shopify-api';
+import {
+  ConfigParams as ApiConfigParams,
+  Session,
+  Shopify,
+  ShopifyRestResources,
+} from '@shopify/shopify-api';
 import {SessionStorage} from '@shopify/shopify-app-session-storage';
 import {Env} from 'hono';
-
-import {
-  AppConfigParams,
-  AuthConfigParams,
-  WebhooksConfigParams,
-} from './config';
 
 export interface AppEnv extends Env {
   Bindings: {
@@ -34,4 +33,26 @@ export interface AppConfigContext<
   exitIframePath: string;
   sessionStorage: S;
   logger: Shopify['logger'];
+}
+
+export interface AuthConfigParams {
+  path: string;
+  callbackPath: string;
+  checkBillingPlans?: string[];
+}
+
+export interface WebhooksConfigParams {
+  path: string;
+}
+
+export interface AppConfigParams<
+  R extends ShopifyRestResources = any,
+  S extends SessionStorage = SessionStorage,
+> {
+  auth: AuthConfigParams;
+  webhooks: WebhooksConfigParams;
+  sessionStorage: S;
+  api?: Partial<ApiConfigParams<R>>;
+  useOnlineTokens?: boolean;
+  exitIframePath?: string;
 }

@@ -7,10 +7,9 @@ import {
 } from '@shopify/shopify-api';
 import {Context} from 'hono';
 import * as semver from 'semver';
+import {AppEnv} from 'types';
 
 import {LIB_VERSION} from '../version';
-
-import {AppEnv} from '~types/app';
 
 export function overrideLogger(logger: Shopify['logger']): Shopify['logger'] {
   const baseContext = {package: 'shopify-app'};

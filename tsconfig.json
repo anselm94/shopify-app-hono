@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": "src",
     "target": "ESNext",
     "declaration": true,
     "moduleResolution": "Node",
@@ -11,7 +12,11 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "lib": ["WebWorker"],
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "paths": {
+      "~middlewares/*": ["middlewares/*"],
+      "~utils/*": ["utils/*"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/test/*", "**/__tests__/*"]
