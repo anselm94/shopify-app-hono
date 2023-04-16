@@ -1,28 +1,26 @@
 import {Context} from 'hono';
 import {AppEnv} from 'types';
 
+import {hasBearerToken} from './request';
+
 export async function returnTopLevelRedirection(
   ctx: Context<AppEnv>,
   redirectUrl: string,
-  bearerPresent: boolean,
 ): Promise<Response> {
-  const ctxAppConfig = ctx.get('AppConfig');
+  const logger = ctx.get('logger');
   // If the request has a bearer token, the app is currently embedded, and must break out of the iframe to
   // re-authenticate
-  if (bearerPresent) {
-    await ctxAppConfig.logger.debug(
+  if (hasBearerToken(ctx)) {
+    await logger.debug(
       `Redirecting to top level at ${redirectUrl} while embedded, returning headers`,
     );
 
-    ctx.status(403);
-    ctx.header('X-Shopify-API-Request-Failure-Reauthorize', '1');
-    ctx.header('X-Shopify-API-Request-Failure-Reauthorize-Url', redirectUrl);
-
-    return ctx.res;
+    return ctx.text('Unauthorized', 403, {
+      'X-Shopify-API-Request-Failure-Reauthorize': '1',
+      'X-Shopify-API-Request-Failure-Reauthorize-Url': redirectUrl,
+    });
   } else {
-    await ctxAppConfig.logger.debug(
-      `Redirecting to ${redirectUrl} while at the top level`,
-    );
+    await logger.debug(`Redirecting to ${redirectUrl} while at the top level`);
 
     return ctx.redirect(redirectUrl);
   }

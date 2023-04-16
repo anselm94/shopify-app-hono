@@ -1,32 +1,34 @@
 import {ShopifyRestResources, shopifyApi} from '@shopify/shopify-api';
 import {SessionStorage} from '@shopify/shopify-app-session-storage';
-import {Context, MiddlewareHandler} from 'hono';
-import {AppConfigContext, AppConfigParams, AppEnv} from 'types';
-import {overrideLogger, validateApiConfig} from 'utils/config';
-
-function createAppConfigContext<
-  R extends ShopifyRestResources = any,
-  S extends SessionStorage = SessionStorage,
->(ctx: Context<AppEnv>, config: AppConfigParams<R, S>): AppConfigContext {
-  const api = shopifyApi(validateApiConfig(ctx, config.api || {}));
-  return {
-    config,
-    api,
-    useOnlineTokens: config.useOnlineTokens ?? false,
-    exitIframePath: config.exitIframePath ?? '/exitiframe',
-    sessionStorage: config.sessionStorage,
-    auth: config.auth,
-    webhooks: config.webhooks,
-    logger: overrideLogger(api.logger),
-  };
-}
+import {MiddlewareHandler} from 'hono';
+import {AppConfig, AppEnv} from 'types';
+import {createLogger, validateApiConfig} from 'utils/config';
 
 export function shopifyApp<
   R extends ShopifyRestResources = any,
   S extends SessionStorage = SessionStorage,
->(params: AppConfigParams<R, S>): MiddlewareHandler<AppEnv> {
+>(config: AppConfig<R, S>): MiddlewareHandler<AppEnv> {
   return async (ctx, next) => {
-    ctx.set('AppConfig', createAppConfigContext(ctx, params));
+    const api = shopifyApi(validateApiConfig(ctx, config.api || {}));
+
+    ctx.set('config', {
+      auth: config.auth,
+      webhooks: config.webhooks,
+      exitIframePath: config.exitIframePath ?? '/exitiframe',
+      useOnlineTokens: config.useOnlineTokens ?? false,
+    });
+    ctx.set('logger', createLogger(api.logger));
+    ctx.set('api', api);
+    ctx.set('session-storage', config.sessionStorage);
+    ctx.set(
+      'shop',
+      api.utils.sanitizeShop(ctx.req.query('shop') || '') ?? undefined,
+    );
+    ctx.set(
+      'host',
+      api.utils.sanitizeHost(ctx.req.query('host') || '') ?? undefined,
+    );
+    ctx.set('embedded', ctx.req.query('embedded') === '1');
     await next();
   };
 }

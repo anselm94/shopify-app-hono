@@ -5,64 +5,64 @@ export async function redirectToAuth(
   ctx: Context<AppEnv>,
   isOnline = false,
 ): Promise<Response> {
-  const ctxAppConfig = ctx.get('AppConfig');
-  const shop = ctxAppConfig.api.utils.sanitizeShop(ctx.req.query('shop') || '');
-  if (shop) {
-    if (ctx.req.query('embedded') === '1') {
-      return clientSideRedirect(ctx, shop);
+  if (ctx.get('shop')) {
+    if (ctx.get('embedded')) {
+      return clientSideRedirect(ctx);
     } else {
-      return serverSideRedirect(ctx, shop, isOnline);
+      return serverSideRedirect(ctx, isOnline);
     }
   } else {
-    await ctxAppConfig.logger.error('No shop provided to redirect to auth');
+    await ctx.get('logger').error('No shop provided to redirect to auth');
 
-    ctx.status(500);
-    return ctx.text('No shop provided');
+    return ctx.text('No shop provided', 500);
   }
 }
 
-async function clientSideRedirect(
-  ctx: Context<AppEnv>,
-  shop: string,
-): Promise<Response> {
-  const ctxAppConfig = ctx.get('AppConfig');
+async function clientSideRedirect(ctx: Context<AppEnv>): Promise<Response> {
+  const api = ctx.get('api');
+  const config = ctx.get('config');
+  const shop = ctx.get('shop')!;
+  const host = ctx.get('host');
 
-  const host = ctxAppConfig.api.utils.sanitizeHost(ctx.req.query('host') || '');
   if (!host) {
-    ctx.status(500);
-    return ctx.text('No host provided');
+    return ctx.text('No host provided', 500);
   }
 
   const redirectUriParams = new URLSearchParams({shop, host}).toString();
 
-  const appHost = `${ctxAppConfig.api.config.hostScheme}://${ctxAppConfig.api.config.hostName}`;
+  const appHost = `${api.config.hostScheme}://${api.config.hostName}`;
   const queryParams = new URLSearchParams({
     ...ctx.req.queries(),
     shop,
-    redirectUri: `${appHost}${ctxAppConfig.auth.path}?${redirectUriParams}`,
+    redirectUri: `${appHost}${config.auth.path}?${redirectUriParams}`,
   }).toString();
 
-  await ctxAppConfig.logger.debug(
-    `Redirecting to auth while embedded, going to ${ctxAppConfig.exitIframePath}`,
-    {shop},
-  );
+  await ctx
+    .get('logger')
+    .debug(
+      `Redirecting to auth while embedded, going to ${config.exitIframePath}`,
+      {shop},
+    );
 
-  return ctx.redirect(`${ctxAppConfig.exitIframePath}?${queryParams}`);
+  return ctx.redirect(`${config.exitIframePath}?${queryParams}`);
 }
 
 async function serverSideRedirect(
   ctx: Context<AppEnv>,
-  shop: string,
   isOnline: boolean,
 ): Promise<Response> {
-  const ctxAppConfig = ctx.get('AppConfig');
-  await ctxAppConfig.logger.debug(
-    `Redirecting to auth at ${ctxAppConfig.auth.path}, with callback ${ctxAppConfig.auth.callbackPath}`,
-    {shop, isOnline},
-  );
+  const shop = ctx.get('shop')!;
+  const config = ctx.get('config');
 
-  await ctxAppConfig.api.auth.begin({
-    callbackPath: ctxAppConfig.auth.callbackPath,
+  await ctx
+    .get('logger')
+    .debug(
+      `Redirecting to auth at ${config.auth.path}, with callback ${config.auth.callbackPath}`,
+      {shop, isOnline},
+    );
+
+  await ctx.get('api').auth.begin({
+    callbackPath: config.auth.callbackPath,
     shop,
     isOnline,
     rawRequest: ctx.req,

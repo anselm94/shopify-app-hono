@@ -11,7 +11,7 @@ import {AppEnv} from 'types';
 
 import {LIB_VERSION} from '../version';
 
-export function overrideLogger(logger: Shopify['logger']): Shopify['logger'] {
+export function createLogger(logger: Shopify['logger']): Shopify['logger'] {
   const baseContext = {package: 'shopify-app'};
 
   return {

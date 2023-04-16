@@ -7,7 +7,10 @@ import {
 import {SessionStorage} from '@shopify/shopify-app-session-storage';
 import {Env} from 'hono';
 
-export interface AppEnv extends Env {
+export interface AppEnv<
+  R extends ShopifyRestResources = any,
+  S extends SessionStorage = SessionStorage,
+> extends Env {
   Bindings: {
     SHOPIFY_API_KEY?: string;
     SHOPIFY_API_SECRET?: string;
@@ -16,23 +19,15 @@ export interface AppEnv extends Env {
     SHOP_CUSTOM_DOMAIN?: string;
   };
   Variables: {
-    AppConfig: AppConfigContext;
-    Session: Session;
+    config: AppConfigParams;
+    logger: Shopify['logger'];
+    api: Shopify<R>;
+    'session-storage': S;
+    shop?: string;
+    host?: string;
+    embedded: boolean;
+    session?: Session;
   };
-}
-
-export interface AppConfigContext<
-  R extends ShopifyRestResources = any,
-  S extends SessionStorage = SessionStorage,
-> {
-  config: AppConfigParams<R, S>;
-  auth: AuthConfigParams;
-  webhooks: WebhooksConfigParams;
-  api: Shopify<R>;
-  useOnlineTokens: boolean;
-  exitIframePath: string;
-  sessionStorage: S;
-  logger: Shopify['logger'];
 }
 
 export interface AuthConfigParams {
@@ -45,14 +40,19 @@ export interface WebhooksConfigParams {
   path: string;
 }
 
-export interface AppConfigParams<
+export interface AppConfigParams {
+  auth: AuthConfigParams;
+  webhooks: WebhooksConfigParams;
+  useOnlineTokens: boolean;
+  exitIframePath: string;
+}
+
+export interface AppConfig<
   R extends ShopifyRestResources = any,
   S extends SessionStorage = SessionStorage,
-> {
+> extends Partial<AppConfigParams> {
   auth: AuthConfigParams;
   webhooks: WebhooksConfigParams;
   sessionStorage: S;
   api?: Partial<ApiConfigParams<R>>;
-  useOnlineTokens?: boolean;
-  exitIframePath?: string;
 }

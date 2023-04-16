@@ -4,26 +4,28 @@ import {AppEnv} from 'types';
 
 import {hasValidAccessToken} from '~utils/has-valid-access-token';
 import {redirectToAuth} from '~utils/redirect-to-auth';
+import {getBearerToken, hasBearerToken} from '~utils/request';
 import {returnTopLevelRedirection} from '~utils/return-top-level-redirection';
 
 export function validateAuthenticatedSession(): MiddlewareHandler<AppEnv> {
   return async (ctx, next) => {
-    const ctxAppConfig = ctx.get('AppConfig');
+    const logger = ctx.get('logger');
+    const api = ctx.get('api');
+    const config = ctx.get('config');
+    let shop = ctx.get('shop');
 
-    ctxAppConfig.logger.info('Running validateAuthenticatedSession');
+    logger.info('Running validateAuthenticatedSession');
 
     let sessionId: string | undefined;
     try {
-      sessionId = await ctxAppConfig.api.session.getCurrentId({
-        isOnline: ctxAppConfig.useOnlineTokens,
+      sessionId = await api.session.getCurrentId({
+        isOnline: config.useOnlineTokens,
         rawRequest: ctx.req,
         rawResponse: ctx.res,
       });
     } catch (_err) {
       const error = _err as Error;
-      await ctxAppConfig.logger.error(
-        `Error when loading session from storage: ${error}`,
-      );
+      await logger.error(`Error when loading session from storage: ${error}`);
 
       return handleSessionError(ctx, error);
     }
@@ -31,75 +33,63 @@ export function validateAuthenticatedSession(): MiddlewareHandler<AppEnv> {
     let session: Session | undefined;
     if (sessionId) {
       try {
-        session = await ctxAppConfig.sessionStorage.loadSession(sessionId);
+        session = await ctx.get('session-storage').loadSession(sessionId);
       } catch (_err) {
         const error = _err as Error;
-        await ctxAppConfig.logger.error(
-          `Error when loading session from storage: ${error}`,
-        );
+        await logger.error(`Error when loading session from storage: ${error}`);
 
         ctx.status(500);
         return ctx.text(error.message);
       }
     }
 
-    let shop =
-      ctxAppConfig.api.utils.sanitizeShop(ctx.req.query('shop') || '') ||
-      session?.shop;
-
     if (session && shop && session.shop !== shop) {
-      ctxAppConfig.logger.debug(
-        'Found a session for a different shop in the request',
-        {currentShop: session.shop, requestShop: shop},
-      );
+      logger.debug('Found a session for a different shop in the request', {
+        currentShop: session.shop,
+        requestShop: shop,
+      });
 
       return redirectToAuth(ctx);
     }
 
     if (session) {
-      ctxAppConfig.logger.debug('Request session found and loaded', {
-        shop: session.shop,
+      logger.debug('Request session found and loaded', {
+        shosp: session.shop,
       });
 
-      if (session.isActive(ctxAppConfig.api.config.scopes)) {
-        ctxAppConfig.logger.debug('Request session exists and is active', {
+      if (session.isActive(api.config.scopes)) {
+        logger.debug('Request session exists and is active', {
           shop: session.shop,
         });
 
-        if (await hasValidAccessToken(ctxAppConfig.api, session)) {
-          ctxAppConfig.logger.info('Request session has a valid access token', {
+        if (await hasValidAccessToken(api, session)) {
+          logger.info('Request session has a valid access token', {
             shop: session.shop,
           });
 
-          ctx.set('Session', session);
+          ctx.set('session', session);
           await next();
           return ctx.res;
         }
       }
     }
 
-    const bearerPresent = ctx.req.headers
-      .get('Authorization')
-      ?.match(/Bearer (.*)/);
-    if (bearerPresent) {
+    if (hasBearerToken(ctx)) {
       if (!shop) {
         shop = await setShopFromSessionOrToken(
-          ctxAppConfig.api,
+          api,
           session,
-          bearerPresent[1],
+          getBearerToken(ctx)!,
         );
       }
     }
 
-    const redirectUrl = `${ctxAppConfig.auth.path}?shop=${shop}`;
-    ctxAppConfig.logger.info(
-      `Session was not valid. Redirecting to ${redirectUrl}`,
-      {
-        shop,
-      },
-    );
+    const redirectUrl = `${config.auth.path}?shop=${shop}`;
+    logger.info(`Session was not valid. Redirecting to ${redirectUrl}`, {
+      shop,
+    });
 
-    return returnTopLevelRedirection(ctx, redirectUrl, Boolean(bearerPresent));
+    return returnTopLevelRedirection(ctx, redirectUrl);
   };
 }
 
