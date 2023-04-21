@@ -1,5 +1,6 @@
 import {Context} from 'hono';
-import {AppEnv} from 'types';
+
+import {AppEnv} from '#/types';
 
 export async function redirectToAuth(
   ctx: Context<AppEnv>,

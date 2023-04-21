@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
+    "baseUrl": ".",
     "target": "ESNext",
     "declaration": true,
     "moduleResolution": "Node",
@@ -14,8 +14,7 @@
     "lib": ["WebWorker"],
     "types": ["jest", "node"],
     "paths": {
-      "~middlewares/*": ["middlewares/*"],
-      "~utils/*": ["utils/*"]
+      "#/*": ["src/*"]
     }
   },
   "include": ["src/**/*.ts"],

@@ -7,11 +7,11 @@ import {
 } from '@shopify/shopify-api';
 import {Context} from 'hono';
 import * as semver from 'semver';
-import {AppEnv} from 'types';
 
-import {LIB_VERSION} from '../version';
+import {AppEnv} from '#/types';
+import {LIB_VERSION} from '#/version';
 
-export function createLogger(logger: Shopify['logger']): Shopify['logger'] {
+export const createLogger = (logger: Shopify['logger']): Shopify['logger'] => {
   const baseContext = {package: 'shopify-app'};
 
   return {
@@ -35,17 +35,18 @@ export function createLogger(logger: Shopify['logger']): Shopify['logger'] {
       logger.warning(`[Deprecated | ${version}] ${message}`, {...baseContext});
     },
   };
-}
+};
 
-export function validateApiConfig<R extends ShopifyRestResources = any>(
+export const normalizeApiConfig = <R extends ShopifyRestResources = any>(
   ctx: Context<AppEnv>,
   config: Partial<ApiConfigParams<R>>,
-): ApiConfigParams<R> {
+): ApiConfigParams<R> => {
   let userAgent = `Shopify Hono Library v${LIB_VERSION}`;
 
   if (config.userAgentPrefix) {
     userAgent = `${config.userAgentPrefix} | ${userAgent}`;
   }
+
   return {
     apiKey: ctx.env.SHOPIFY_API_KEY!,
     apiSecretKey: ctx.env.SHOPIFY_API_SECRET!,
@@ -60,4 +61,4 @@ export function validateApiConfig<R extends ShopifyRestResources = any>(
     ...config,
     userAgentPrefix: userAgent,
   };
-}
+};
