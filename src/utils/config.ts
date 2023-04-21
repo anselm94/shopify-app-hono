@@ -8,8 +8,8 @@ import {
 import {Context} from 'hono';
 import * as semver from 'semver';
 
-import {AppEnv} from '#/types';
-import {LIB_VERSION} from '#/version';
+import {AppEnv} from '../types';
+import {LIB_VERSION} from '../version';
 
 export const createLogger = (logger: Shopify['logger']): Shopify['logger'] => {
   const baseContext = {package: 'shopify-app'};

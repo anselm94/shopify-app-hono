@@ -1,9 +1,8 @@
 import {MiddlewareHandler} from 'hono';
 
-import {AppEnv} from '#/types';
-import {getShopFrom} from '#/utils/common';
+import {getShopFrom} from '../../utils/common';
 
-export function shopifyPublicSession(): MiddlewareHandler<AppEnv> {
+export function shopifyPublicSession(): MiddlewareHandler {
   return async (ctx) => {
     const shop = await getShopFrom(ctx);
     const api = ctx.get('api');

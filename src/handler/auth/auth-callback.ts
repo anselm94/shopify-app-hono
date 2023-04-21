@@ -1,12 +1,12 @@
 import {Session, gdprTopics} from '@shopify/shopify-api';
 import {Context, Handler} from 'hono';
 
-import {AppEnv} from '#/types';
-import {getAppUrl} from '#/utils/common';
-import {redirectToAuth} from '#/utils/redirect-to-auth';
+import {AppEnv} from '../../types';
+import {getAppUrl} from '../../utils/common';
+import {redirectToAuth} from '../../utils/redirect-to-auth';
 
-export const shopifyAuthCallback = (): Handler<AppEnv> => {
-  return async (ctx) => {
+export const shopifyAuthCallback = (): Handler => {
+  return async (ctx: Context<AppEnv>) => {
     const api = ctx.get('api');
     const config = ctx.get('config');
 

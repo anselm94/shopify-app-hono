@@ -1,10 +1,10 @@
-import {Handler} from 'hono';
+import {Context, Handler} from 'hono';
 
-import {AppEnv} from '#/types';
-import {redirectToAuth} from '#/utils/redirect-to-auth';
+import {redirectToAuth} from '../../utils/redirect-to-auth';
+import {AppEnv} from '../../types';
 
-export function shopifyAuthBegin(): Handler<AppEnv> {
-  return (ctx) => {
+export function shopifyAuthBegin(): Handler {
+  return (ctx: Context<AppEnv>) => {
     return redirectToAuth(ctx);
   };
 }

@@ -9,18 +9,18 @@ import {
   shopifyApi,
 } from '@shopify/shopify-api';
 import {SessionStorage} from '@shopify/shopify-app-session-storage';
-import {MiddlewareHandler} from 'hono';
+import {Context, MiddlewareHandler} from 'hono';
 
-import {InvalidAppInstallationError} from '#/error';
-import {ShopifyHonoAppConfig, AppEnv} from '#/types';
-import {createLogger, normalizeApiConfig} from '#/utils/config';
-import {redirectToAuth} from '#/utils/redirect-to-auth';
+import {InvalidAppInstallationError} from '../../error';
+import {ShopifyHonoAppConfig, AppEnv} from '../../types';
+import {createLogger, normalizeApiConfig} from '../../utils/config';
+import {redirectToAuth} from '../../utils/redirect-to-auth';
 
 export function shopifyApp<
   R extends ShopifyRestResources = any,
   S extends SessionStorage = SessionStorage,
->(config: ShopifyHonoAppConfig<R, S>): MiddlewareHandler<AppEnv> {
-  return async (ctx, next) => {
+>(config: ShopifyHonoAppConfig<R, S>): MiddlewareHandler {
+  return async (ctx: Context<AppEnv>, next) => {
     const api = shopifyApi(normalizeApiConfig(ctx, config.api || {}));
 
     ctx.set('config', {

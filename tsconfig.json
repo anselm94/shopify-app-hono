@@ -12,11 +12,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "lib": ["WebWorker"],
-    "types": ["jest", "node"],
-    "paths": {
-      "#/*": ["src/*"]
-    }
+    "types": ["jest", "node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/test/*", "**/__tests__/*"]
 }

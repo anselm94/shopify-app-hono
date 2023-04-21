@@ -1,14 +1,12 @@
 import {AddHandlersParams, DeliveryMethod} from '@shopify/shopify-api';
-import {Handler} from 'hono';
+import {Context, Handler} from 'hono';
+
+import {AppEnv} from '../../types';
 
 import {uninstallAppCallback} from './callback-uninstall-app';
 
-import {AppEnv} from '#/types';
-
-export function shopifyWebhooks(
-  webhookHandlers: AddHandlersParams,
-): Handler<AppEnv> {
-  return async (ctx) => {
+export function shopifyWebhooks(webhookHandlers: AddHandlersParams): Handler {
+  return async (ctx: Context<AppEnv>) => {
     const api = ctx.get('api');
     const config = ctx.get('config');
     const logger = ctx.get('logger');

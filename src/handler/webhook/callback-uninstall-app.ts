@@ -1,7 +1,7 @@
 import {Session, WebhookHandlerFunction} from '@shopify/shopify-api';
 import {Context} from 'hono';
 
-import {AppEnv} from '#/types';
+import {AppEnv} from '../../types';
 
 export const uninstallAppCallback = (
   ctx: Context<AppEnv>,

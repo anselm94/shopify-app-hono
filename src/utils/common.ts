@@ -1,7 +1,7 @@
 import {InvalidHostError, InvalidShopError} from '@shopify/shopify-api';
 import {Context} from 'hono';
 
-import {AppEnv} from '#/types';
+import {AppEnv} from '../types';
 
 export function getBearerToken(ctx: Context<AppEnv>): string | undefined {
   const extText = ctx.req.headers.get('Authorization')?.match(/Bearer (.*)/);
