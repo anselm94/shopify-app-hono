@@ -21,14 +21,14 @@ export async function getShopFrom(ctx: Context<AppEnv>) {
   return ctx.get('shop');
 }
 
-export async function getAppUrl(ctx: Context<AppEnv>) {
+export async function getAppUrl(ctx: Context<AppEnv>, path = ctx.req.path) {
   const api = ctx.get('api');
   const embeddedAppUrl = await api.auth.getEmbeddedAppUrl({
     rawRequest: ctx.req,
     rawResponse: ctx.res,
   });
   if (api.config.isEmbeddedApp) {
-    return `${embeddedAppUrl}/${ctx.req.path}`;
+    return `${embeddedAppUrl}/${path}`;
   } else {
     const shop = ctx.get('shop');
     if (!shop) {
@@ -40,6 +40,6 @@ export async function getAppUrl(ctx: Context<AppEnv>) {
       throw new InvalidHostError();
     }
 
-    return `/${ctx.req.path}?shop=${shop}&host=${encodeURIComponent(host)}`;
+    return `/${path}?shop=${shop}&host=${encodeURIComponent(host)}`;
   }
 }

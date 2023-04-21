@@ -5,7 +5,7 @@ import {AppEnv} from '#/types';
 import {getAppUrl} from '#/utils/common';
 import {redirectToAuth} from '#/utils/redirect-to-auth';
 
-export const authCallback = (): Handler<AppEnv> => {
+export const shopifyAuthCallback = (): Handler<AppEnv> => {
   return async (ctx) => {
     const api = ctx.get('api');
     const config = ctx.get('config');
@@ -37,7 +37,7 @@ export const authCallback = (): Handler<AppEnv> => {
       }
     }
 
-    const appUrl = await getAppUrl(ctx);
+    const appUrl = await getAppUrl(ctx, '/');
 
     return ctx.redirect(appUrl);
   };

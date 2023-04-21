@@ -47,7 +47,7 @@ export interface AppConfigParams {
   exitIframePath: string;
 }
 
-export interface AppConfig<
+export interface ShopifyHonoAppConfig<
   R extends ShopifyRestResources = any,
   S extends SessionStorage = SessionStorage,
 > extends Partial<AppConfigParams> {

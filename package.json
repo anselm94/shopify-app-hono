@@ -16,7 +16,7 @@
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "rimraf ./build && tsc",
     "test": "jest",
     "lint": "prettier -c . && eslint .",
     "format": "prettier -w . && eslint --fix .",
@@ -64,9 +64,6 @@
     "typescript": "^5.0.4"
   },
   "files": [
-    "build/*",
-    "!bundle/*",
-    "!tsconfig.tsbuildinfo",
-    "!node_modules"
+    "build"
   ]
 }

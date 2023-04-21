@@ -5,7 +5,9 @@ import {uninstallAppCallback} from './callback-uninstall-app';
 
 import {AppEnv} from '#/types';
 
-export function webhook(webhookHandlers: AddHandlersParams): Handler<AppEnv> {
+export function shopifyWebhooks(
+  webhookHandlers: AddHandlersParams,
+): Handler<AppEnv> {
   return async (ctx) => {
     const api = ctx.get('api');
     const config = ctx.get('config');

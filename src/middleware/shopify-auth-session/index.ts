@@ -5,7 +5,7 @@ import {standaloneShopifyAppAuth} from './standalone-app-auth';
 
 import {AppEnv} from '#/types';
 
-export function validateAuthenticatedSession(): MiddlewareHandler<AppEnv> {
+export function shopifyAuthenticatedSession(): MiddlewareHandler<AppEnv> {
   return async (ctx, next) => {
     if (ctx.get('api').config.isEmbeddedApp) {
       return embeddedShopifyAppAuth()(ctx, next);
