@@ -1,8 +1,8 @@
-# Releasing shopify-app-js
+# Releasing `shopify-app-hono`
 
 ## General overview of the release process
 
-The `shopify-app-js` repo uses `changesets` to track and update the `CHANGELOG.md` file, as well as to publish to NPM.
+The `shopify-app-hono` repo uses `changesets` to track and update the `CHANGELOG.md` file, as well as to publish to NPM.
 
 ### For fixes and new functionality that are being published _without_ using any release candidates
 

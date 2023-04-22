@@ -1,6 +1,6 @@
 {
   "name": "@anselm94/shopify-app-hono",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Shopify Hono Middleware - to simplify the building of Shopify Apps with Hono web framework",
   "repository": {
     "type": "git",
