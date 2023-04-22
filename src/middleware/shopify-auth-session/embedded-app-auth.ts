@@ -5,7 +5,7 @@ import {InvalidShopifyHonoConfig} from '../../error';
 import {AppEnv} from '../../types';
 import {getAppUrl, getShopFrom} from '../../utils/common';
 
-export function embeddedShopifyAppAuth(): MiddlewareHandler {
+export function embeddedAppSession(): MiddlewareHandler {
   return async (ctx: Context<AppEnv>, next: Next) => {
     const api = ctx.get('api');
 

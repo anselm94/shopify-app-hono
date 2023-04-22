@@ -14,6 +14,5 @@
     "lib": ["WebWorker"],
     "types": ["jest", "node"]
   },
-  "include": ["src"],
-  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/test/*", "**/__tests__/*"]
+  "include": ["src/**/*.ts", "src/**/*.test.ts"]
 }

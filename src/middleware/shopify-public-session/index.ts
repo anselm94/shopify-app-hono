@@ -2,7 +2,7 @@ import {MiddlewareHandler} from 'hono';
 
 import {getShopFrom} from '../../utils/common';
 
-export function shopifyPublicSession(): MiddlewareHandler {
+export function publicSession(): MiddlewareHandler {
   return async (ctx) => {
     const shop = await getShopFrom(ctx);
     const api = ctx.get('api');

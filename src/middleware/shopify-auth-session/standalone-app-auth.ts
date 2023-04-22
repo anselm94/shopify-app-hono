@@ -5,7 +5,7 @@ import {InvalidShopifyHonoConfig} from '../../error';
 import {AppEnv} from '../../types';
 import {getShopFrom} from '../../utils/common';
 
-export function standaloneShopifyAppAuth(): MiddlewareHandler {
+export function standaloneAppSession(): MiddlewareHandler {
   return async (ctx: Context<AppEnv>, next: Next) => {
     const api = ctx.get('api');
     const config = ctx.get('config');
