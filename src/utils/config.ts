@@ -6,7 +6,7 @@ import {
   ShopifyRestResources,
 } from '@shopify/shopify-api';
 import {Context} from 'hono';
-import * as semver from 'semver';
+import {compare} from 'compare-versions';
 
 import {AppEnv} from '../types';
 import {LIB_VERSION} from '../version';
@@ -27,7 +27,7 @@ export const createLogger = (logger: Shopify['logger']): Shopify['logger'] => {
     error: async (message, context = {}) =>
       logger.error(message, {...baseContext, ...context}),
     deprecated: async (version: string, message: string) => {
-      if (semver.gte(LIB_VERSION, version)) {
+      if (compare(LIB_VERSION, version, '>=')) {
         throw new FeatureDeprecatedError(
           `Feature was deprecated in version ${version}`,
         );

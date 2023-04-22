@@ -1,13 +1,13 @@
-import {ShopifyError} from '@shopify/shopify-api/lib/error';
+import {ShopifyError} from '@shopify/shopify-api';
 import {
-  canonicalizeHeaders,
-  flatHeaders,
   AdapterArgs,
+  Headers,
   NormalizedRequest,
   NormalizedResponse,
-  Headers,
   addHeader,
-} from '@shopify/shopify-api/runtime/http';
+  canonicalizeHeaders,
+  flatHeaders,
+} from '@shopify/shopify-api/runtime';
 import {HonoRequest} from 'hono';
 
 interface HonoAdapterArgs extends AdapterArgs {
