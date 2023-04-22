@@ -1,8 +1,5 @@
-export class ShopifyAppError extends Error {
-  constructor(...args: any) {
-    super(...args);
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
+import {ShopifyError} from '@shopify/shopify-api';
 
-export class SessionStorageError extends ShopifyAppError {}
+export class InvalidShopifyHonoConfig extends ShopifyError {}
+
+export class InvalidAppInstallationError extends ShopifyError {}

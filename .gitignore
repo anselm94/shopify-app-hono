@@ -13,3 +13,6 @@ packages/**/*.js.map
 packages/**/*.tgz
 tmp/
 .vscode/
+
+# TODO remove this later
+src1
