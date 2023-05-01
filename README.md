@@ -2,6 +2,10 @@
 
 <!-- ![Build Status]() -->
 
+> **Warning**
+> 
+> This is an alpha experimental software. Please use it with caution.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![npm version](https://badge.fury.io/js/%40anselm94%2Fshopify-app-hono.svg)](https://badge.fury.io/js/%40anselm94%2Fshopify-app-hono)
 
@@ -31,62 +35,65 @@ yarn init .
 yarn add @anselm94/shopify-app-hono
 ```
 
-Then, you can import the package in your app by creating an `index.js` file containing:
+Then, you can import the package in your app by creating a `.js` file depending on your edge runtime containing:
 
 ```ts
-const express = require('express');
-const {shopifyApp} = require('@anselm94/shopify-app-hono');
+// Import shopify-app-hono adapter for shopify-api for adapting 'hono'
+import "@anselm94/shopify-app-hono/adapter";
 
-const PORT = 8080;
+// Import shopify-app-hono related dependencies for config, handler and middleware
+import { ShopifyHonoAppConfig, shopifyHandler, shopifyMiddleware } from "@anselm94/shopify-app-hono";
 
-const shopify = shopifyApp({
-  api: {
-    apiKey: 'ApiKeyFromPartnersDashboard',
-    apiSecretKey: 'ApiSecretKeyFromPartnersDashboard',
-    scopes: ['your_scopes'],
-    hostScheme: 'http',
-    hostName: `localhost:${PORT}`,
-  },
+// Import Hono and adapters for various runtime
+import { Hono } from "hono";
+import { handle } from "hono/cloudflare-pages"; // Cloudflare Pages
+
+// create shopify-app-hono config
+const config: ShopifyHonoAppConfig = {
   auth: {
-    path: '/api/auth',
-    callbackPath: '/api/auth/callback',
+    path: "/api/auth",
+    callbackPath: "/api/auth/callback",
   },
   webhooks: {
-    path: '/api/webhooks',
+    path: "/webhooks",
   },
+  sessionStorage: new KVSessionStorage(),
+};
+
+// create a new Hono app
+const app = new Hono().basePath("/api");
+
+// Middlewares //
+app.use("*", shopifyMiddleware.shopifyApp(config)); // mandatory to register this before any middleware/handler
+app.use("/products/*", shopifyMiddleware.authSession()); // protected routes
+app.use("/public/*", shopifyMiddleware.publicSession()); // unprotected routes
+
+// Handlers //
+app.get("/auth", shopifyHandler.authBegin()); // handle oauth flow begin
+app.get("/auth/callback", shopifyHandler.authCallback()); // handle oauth flow callback
+app.post(config.webhooks.path, shopifyHandler.webhooks(webhookHandlers)); // handle webhooks
+
+// Your API //
+app.get("/products/count", (c) => {
+  return c.json({ count: 99 });
 });
 
-const app = express();
-
-app.get(shopify.config.auth.path, shopify.auth.begin());
-app.get(
-  shopify.config.auth.callbackPath,
-  shopify.auth.callback(),
-  shopify.redirectToShopifyOrAppRoot(),
-);
-app.post(
-  shopify.config.webhooks.path,
-  shopify.processWebhooks({webhookHandlers}),
-);
-
-app.get('/', shopify.ensureInstalledOnShop(), (req, res) => {
-  res.send('Hello world!');
-});
-
-app.listen(PORT, () => console.log('Server started'));
+// hono handle requests
+export const onRequest = handle(app);
 ```
 
-Once you set the appropriate configuration values, you can then run your Express app as usual, for instance using:
+Once you set the appropriate configuration values, you can then run your app depending on your runtime:
 
 ```bash
-node ./index.js
+# Cloudflare Pages
+wrangler pages dev
 ```
 
 To load your app within the Shopify Admin app, you need to:
 
 1. Update your app's URL in your Partners Dashboard app setup page to `http://localhost:8080`
-1. Update your app's callback URL to `http://localhost:8080/api/auth/callback` in that same page
-1. Go to **Test your app** in Partners Dashboard and select your development store
+2. Update your app's callback URL to `http://localhost:8080/api/auth/callback` in that same page
+3. Go to **Test your app** in Partners Dashboard and select your development store
 
 ## Next steps
 
