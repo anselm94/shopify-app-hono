@@ -21,7 +21,7 @@
     "bundle": "rollup --config",
     "test": "jest",
     "lint": "prettier -c . && eslint .",
-    "format": "prettier -w . && eslint --fix .",
+    "format": "tsc --noEmit && prettier -w . && eslint --fix .",
     "release": "npm run build && changeset publish",
     "clean": "rimraf ./build"
   },

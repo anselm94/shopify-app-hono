@@ -20,6 +20,7 @@ export async function redirectToAuth(
 }
 
 async function clientSideRedirect(ctx: Context<AppEnv>): Promise<Response> {
+  const logger = ctx.get('logger');
   const api = ctx.get('api');
   const config = ctx.get('config');
   const shop = ctx.get('shop')!;
@@ -38,12 +39,10 @@ async function clientSideRedirect(ctx: Context<AppEnv>): Promise<Response> {
     redirectUri: `${appHost}${config.auth.path}?${redirectUriParams}`,
   }).toString();
 
-  await ctx
-    .get('logger')
-    .debug(
-      `Redirecting to auth while embedded, going to ${config.exitIframePath}`,
-      {shop},
-    );
+  logger.debug(
+    `Redirecting to auth while embedded, going to ${config.exitIframePath}`,
+    {shop},
+  );
 
   return ctx.redirect(`${config.exitIframePath}?${queryParams}`);
 }
@@ -54,21 +53,18 @@ async function serverSideRedirect(
 ): Promise<Response> {
   const shop = ctx.get('shop')!;
   const config = ctx.get('config');
+  const logger = ctx.get('logger');
 
-  await ctx
-    .get('logger')
-    .debug(
-      `Redirecting to auth at ${config.auth.path}, with callback ${config.auth.callbackPath}`,
-      {shop, isOnline},
-    );
+  logger.debug(
+    `Redirecting to auth at ${config.auth.path}, with callback ${config.auth.callbackPath}`,
+    {shop, isOnline},
+  );
 
-  await ctx.get('api').auth.begin({
+  return ctx.get('api').auth.begin({
     callbackPath: config.auth.callbackPath,
     shop,
     isOnline,
     rawRequest: ctx.req,
     rawResponse: ctx.res,
   });
-
-  return ctx.res;
 }
